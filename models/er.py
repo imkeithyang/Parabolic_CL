@@ -9,7 +9,6 @@ from models.utils.continual_model import ContinualModel
 from models.utils.brownian_utils import get_bridges
 from utils.args import add_management_args, add_experiment_args, add_rehearsal_args, ArgumentParser
 from utils.buffer import Buffer
-from utils.parabolic_buffer import PBuffer
 
 
 def get_parser() -> ArgumentParser:

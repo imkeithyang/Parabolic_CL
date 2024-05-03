@@ -37,7 +37,7 @@ class TinyImagenet(Dataset):
 
         if True:
             if os.path.isdir(root) and len(os.listdir(root)) > 0:
-                print('Download not needed, files already on disk.')
+                pass
             else:
                 from onedrivedownloader import download
 

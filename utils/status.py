@@ -49,7 +49,7 @@ class ProgressBar:
                 epoch,
                 progress_bar,
                 round(3600 / (self.running_sum / i * max_iter), 2),
-                round(loss, 8)
+                round(loss, 3)
             ), file=sys.stderr, end='', flush=True)
 
 def progress_bar(i: int, max_iter: int, epoch: Union[int, str],

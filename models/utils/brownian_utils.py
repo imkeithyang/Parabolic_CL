@@ -10,13 +10,16 @@ def get_bridges(args, inputs, labels, num_classes, device, other_inputs=None, ot
     '''
     sample brownian bridges for inputs and labels
     '''
+    if args.sigma_y == -1:
+        args.sigma_y = args.sigma_x
+        
     real_batch_size = inputs.shape[0]
     d = int(torch.prod(torch.tensor(inputs.shape[1:])))
 
     t = torch.linspace(0, args.T, args.n_t).unsqueeze(0).unsqueeze(-1)
     t = t.repeat(real_batch_size*args.n_b, 1, d).float().to(device)
     t_label = torch.linspace(0, args.T, args.n_t).unsqueeze(0).unsqueeze(-1)
-    t_label = t_label.repeat(real_batch_size, 1, 1).float().to(device)
+    t_label = t_label.repeat(real_batch_size*args.n_b, 1, 1).float().to(device)
     
     if other_inputs is None:
         # Random endpoints
@@ -31,10 +34,22 @@ def get_bridges(args, inputs, labels, num_classes, device, other_inputs=None, ot
         inflat_b = other_inputs.flatten(1)
         labels_oh_a = labels
         labels_oh_b = other_labels
+    
+    inflat_a = inflat_a.repeat(args.n_b,1)
+    inflat_b = inflat_b.repeat(args.n_b,1)
+    labels_oh_a = labels_oh_a.repeat(args.n_b,1)
+    labels_oh_b = labels_oh_b.repeat(args.n_b,1)
+    
+    
     mix_input = bbridges(t, inflat_a, inflat_b, 
-                         var=args.sigma, simplex=False).reshape(-1, *inputs.shape[1:])
+                         var=args.sigma_x, simplex=False).reshape(-1, *inputs.shape[1:])
     mix_label = bbridges(t_label, labels_oh_a, labels_oh_b, 
-                         var=args.sigma, simplex=True).reshape(-1, *labels_oh_a.shape[1:])
+                         var=args.sigma_y, simplex=True).reshape(-1, *labels_oh_a.shape[1:])
+    if args.sigma_y == 0:
+        lam = ((args.T - t_label[...,0])/args.T).unsqueeze(2)
+        mix_label = labels_oh_a.unsqueeze(1).repeat(1,args.n_t,1)*lam +\
+            labels_oh_b.unsqueeze(1).repeat(1,args.n_t,1)*(args.T - lam)
+        mix_label = mix_label.reshape(inputs.shape[0]*args.n_t,200)
     return mix_input, mix_label
     
 

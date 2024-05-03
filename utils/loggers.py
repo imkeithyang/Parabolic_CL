@@ -47,7 +47,7 @@ class Logger:
             self.fullaccs_mask_classes = []
         self.setting = setting_str
         self.dataset = dataset_str
-        self.model = model_str
+        self.model = args.model
         self.fwt = None
         self.fwt_mask_classes = None
         self.bwt = None
@@ -153,16 +153,17 @@ class Logger:
         wrargs['backward_transfer'] = self.bwt
         wrargs['forgetting'] = self.forgetting
 
-        target_folder = base_path() + "results_{}/".format(self.args.buffer_mode)
+        target_folder = base_path() + "results/"
 
         create_if_not_exists(target_folder + self.setting)
         create_if_not_exists(target_folder + self.setting +
                              "/" + self.dataset)
         create_if_not_exists(target_folder + self.setting +
-                             "/" + self.dataset + "/" + self.model)
+                             "/" + self.dataset + "/" + self.model + 
+                             "_{}".format(5))
 
         path = target_folder + self.setting + "/" + self.dataset\
-            + "/" + self.model + "/logs.pyd"
+            + "/" + self.model + "_{}".format(5) + "/logs.pyd"
         with open(path, 'a') as f:
             f.write(str(wrargs) + '\n')
 

@@ -36,8 +36,10 @@ def add_experiment_args(parser: ArgumentParser) -> None:
     
     parser.add_argument('--bridge', action='store_true',
                         help='Brownian bridge interpolation.')
-    parser.add_argument('--sigma', type=float, default=0.05, 
-                        help='bridge sigma')
+    parser.add_argument('--sigma_x', type=float, default=0.05, 
+                        help='x bridge sigma')
+    parser.add_argument('--sigma_y', type=float, default=0.0, 
+                        help='y bridge sigma')
     parser.add_argument('--T', type=float, default=1.0, 
                         help='terminal time for bridge')
     parser.add_argument('--n_t', type=int, default=5, 
@@ -52,7 +54,7 @@ def add_experiment_args(parser: ArgumentParser) -> None:
                         help='match by minimizing OT EMD')
     parser.add_argument('--simplex', action='store_true', default=False, 
                         help='interpolating y on simplex')
-    parser.add_argument('--weight', type=int, default=0, 
+    parser.add_argument('--weight', type=float, default=0.0, 
                         help='Weighting the bridge observation or not')
 
 
@@ -87,7 +89,7 @@ def add_rehearsal_args(parser: ArgumentParser) -> None:
     """
     parser.add_argument('--buffer_size', type=int, required=True,
                         help='The size of the memory buffer.')
-    parser.add_argument('--buffer_mode', type=str, required=True, 
+    parser.add_argument('--buffer_mode', type=str, required=False, 
                         choices=["reservoir", "parabolic"], default="reservoir",
                         help='The mode of the buffer update.')
     parser.add_argument('--minibatch_size', type=int,

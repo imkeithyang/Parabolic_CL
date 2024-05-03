@@ -89,15 +89,7 @@ def parse_args():
     
     import datetime
     args.wandb_project = "{}".format(args.dataset)
-    if "parabolic" in args.model:
-        args.wandb_name = "{}_lr={}_nt={}_sigma={}_weight={}_{}".format(args.model,
-                                                                        args.lr,
-                                                                        args.n_t,
-                                                                        args.sigma,
-                                                                        args.weight, 
-                                                                        datetime.datetime.now())
-    else:
-        args.wandb_name = "{}_{}".format(args.model,datetime.datetime.now())
+    args.wandb_name = "{}_{}".format(args.model, args.buffer_size if hasattr(mod, 'Buffer') else -1)
 
     return args
 

@@ -121,8 +121,8 @@ class Gem(ContinualModel):
         loader = dataset.train_loader
         cur_y, cur_x = next(iter(loader))[1:]
         self.buffer.add_data(
-            examples=cur_x.to(self.device),
-            labels=cur_y.to(self.device),
+            examples=cur_x[:samples_per_task].to(self.device),
+            labels=cur_y[:samples_per_task].to(self.device),
             task_labels=torch.ones(samples_per_task,
                                    dtype=torch.long).to(self.device) * (self.current_task - 1)
         )

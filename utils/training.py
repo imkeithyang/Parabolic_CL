@@ -84,7 +84,6 @@ def train(model: ContinualModel, dataset: ContinualDataset,
     :param dataset: the continual dataset at hand
     :param args: the arguments of the current execution
     """
-    print(args)
 
     if not args.nowand:
         assert wandb is not None, "Wandb not installed, please install it or run without wandb"
