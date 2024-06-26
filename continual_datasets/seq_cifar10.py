@@ -104,8 +104,8 @@ class SequentialCIFAR10(ContinualDataset):
                         * SequentialCIFAR10.N_TASKS)
 
     @staticmethod
-    def get_loss(weight):
-        if weight:
+    def get_loss(args):
+        if args.weight or args.model=="er_mv":
              loss_fn = nn.CrossEntropyLoss(reduction="none")
         else:
             loss_fn = F.cross_entropy

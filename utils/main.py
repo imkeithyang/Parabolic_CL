@@ -116,7 +116,7 @@ def main(args=None):
         args.minibatch_size = dataset.get_minibatch_size()
 
     backbone = dataset.get_backbone()
-    loss = dataset.get_loss(args.weight)
+    loss = dataset.get_loss(args)
     model = get_model(args, backbone, loss, dataset.get_transform())
     model.to(args.device)
     if args.distributed == 'dp':

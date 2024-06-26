@@ -8,7 +8,7 @@ import torch.nn.functional as F
 from models.utils.continual_model import ContinualModel
 from models.utils.brownian_utils import get_bridges
 from utils.args import add_management_args, add_experiment_args, add_rehearsal_args, ArgumentParser
-from utils.buffer import Buffer
+from utils.mvbuffer import Buffer
 
 
 def get_parser() -> ArgumentParser:
@@ -20,12 +20,12 @@ def get_parser() -> ArgumentParser:
     return parser
 
 
-class ErParabolic(ContinualModel):
-    NAME = 'er_parabolic'
+class ErMv(ContinualModel):
+    NAME = 'ErMv'
     COMPATIBILITY = ['class-il', 'domain-il', 'task-il', 'general-continual']
 
     def __init__(self, backbone, loss, args, transform):
-        super(ErParabolic, self).__init__(backbone, loss, args, transform)
+        super(ErMv, self).__init__(backbone, loss, args, transform)
         self.buffer = Buffer(self.args.buffer_size, self.device, mode=self.args.buffer_mode)
         
     def observe(self, inputs, labels, not_aug_inputs):
@@ -33,27 +33,18 @@ class ErParabolic(ContinualModel):
         batch_size = real_batch_size
         self.opt.zero_grad()
         # get bridges
-        if not self.buffer.is_empty():
+        if self.buffer.is_empty():
+            mix_inputs, mix_labels = get_bridges(self.args, inputs, labels, 
+                                                self.net.num_classes, self.device)
+        else:
             buf_inputs, buf_labels = self.buffer.get_data(
                 self.args.minibatch_size, transform=self.transform)
-            inputs = torch.cat((inputs, buf_inputs))
-            labels = torch.cat((labels, buf_labels))
+            cat_inputs = torch.cat((inputs, buf_inputs))
+            cat_labels = torch.cat((labels, buf_labels))
+            mix_inputs, mix_labels = get_bridges(self.args, cat_inputs, cat_labels, 
+                                                self.net.num_classes, self.device)
             batch_size += buf_inputs.shape[0]
-            
-        if self.args.temper:
-            inputs.requires_grad = True
-            outtemp = self.net(inputs)
-            losstemp = self.loss(outtemp, labels)
-            sample_grads_norm = torch.norm(torch.autograd.grad(losstemp.mean(), 
-                                                               inputs,
-                                                               retain_graph=False, 
-                                                               create_graph=False)[0].detach().flatten(1),dim=1)
-            inputs.requires_grad = False
-            self.opt.zero_grad()
         # feed forward
-        mix_inputs, mix_labels = get_bridges(self.args, inputs, labels,
-                                                self.net.num_classes, self.device, 
-                                                sigma = sample_grads_norm if self.args.temper else None)
         mix_inputs.requires_grad = True
         outputs = self.net(mix_inputs)
         
@@ -66,14 +57,34 @@ class ErParabolic(ContinualModel):
             imp_weight = self.importance_weights(mix_inputs, sample_grads, self.args.n_t,self.args.n_b, batch_size).sum(-1)
             
             loss_path = self.loss(outputs, mix_labels).reshape(batch_size, self.args.n_b,self.args.n_t).mean(1).sum(-1)
-            loss = (loss_path - self.args.weight*imp_weight).mean()
+            loss_noreduce = (loss_path - self.args.weight*imp_weight)
         else:
-            loss = self.loss(outputs, mix_labels)
-            
-        loss.backward()
+            loss_noreduce = self.loss(outputs, mix_labels)
+        loss = loss_noreduce.mean()    
+        loss.mean().backward()
         self.opt.step()
-        self.buffer.add_data(examples=not_aug_inputs,
-                             labels=labels[:real_batch_size])
+        if self.buffer.is_empty():
+            all_loss = loss_noreduce.detach().cpu().numpy()
+            p = all_loss/all_loss.sum()
+            self.buffer.add_data(examples=not_aug_inputs,
+                             labels=labels[:real_batch_size],
+                             p=p)
+        else:
+            all_data, all_labels = self.buffer.get_all_data(transform=self.transform)
+            all_inputs = torch.cat((inputs, all_data))
+            all_labels = torch.cat((labels, all_labels))
+            
+            all_output = self.net(all_inputs)
+            all_loss = self.loss(all_output, all_labels)
+            all_loss = all_loss.detach().cpu().numpy()
+            p = all_loss/all_loss.sum()
+            
+            all_data_not_aug, _ = self.buffer.get_all_data(transform=None)
+            not_aug_inputs = torch.cat((not_aug_inputs, all_data_not_aug))
+            self.buffer.add_data(examples=not_aug_inputs,
+                                labels=all_labels,
+                                p=p)
+        
         return loss.item()
     
     def importance_weights(self, x, sample_grads, n_t, n_b, batch_size):

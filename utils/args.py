@@ -56,7 +56,12 @@ def add_experiment_args(parser: ArgumentParser) -> None:
                         help='interpolating y on simplex')
     parser.add_argument('--weight', type=float, default=0.0, 
                         help='Weighting the bridge observation or not')
-
+    parser.add_argument('--label_shuffle', default=1, choices=[0, 1], 
+                        type=int, help='Label shuffling experiment control')
+    parser.add_argument('--euclidean', default=1, choices=[0, 1], 
+                        type=int, help='euclidean distance sampling')
+    parser.add_argument('--temper', default=0, choices=[0, 1], 
+                        type=int, help='sample with loss gradient norm as bridge variance')
 
     parser.add_argument('--distributed', type=str, default='no', choices=['no', 'dp', 'ddp'])
     parser.add_argument('--device', type=str, default='cuda:0')

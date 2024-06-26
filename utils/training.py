@@ -129,6 +129,11 @@ def train(model: ContinualModel, dataset: ContinualDataset,
                     inputs, labels, not_aug_inputs, logits = data
                     inputs = inputs.to(model.device)
                     labels = labels.to(model.device)
+                    
+                    # label shuffling
+                    if args.label_shuffle:
+                        reshuff = torch.randperm(inputs.shape[0]//2)
+                        labels[0:reshuff.shape[0]] = labels[reshuff]
                     not_aug_inputs = not_aug_inputs.to(model.device)
                     logits = logits.to(model.device)
                     loss = model.meta_observe(inputs, labels, not_aug_inputs, logits)
@@ -136,6 +141,10 @@ def train(model: ContinualModel, dataset: ContinualDataset,
                     inputs, labels, not_aug_inputs = data
                     inputs, labels = inputs.to(model.device), labels.to(
                         model.device)
+                    # label shuffling
+                    if args.label_shuffle:
+                        reshuff = torch.randperm(inputs.shape[0]//2)
+                        labels[0:reshuff.shape[0]] = labels[reshuff]
                     not_aug_inputs = not_aug_inputs.to(model.device)
                     loss = model.meta_observe(inputs, labels, not_aug_inputs)
                 assert not math.isnan(loss)

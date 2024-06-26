@@ -6,7 +6,7 @@ import matplotlib
 matplotlib.use('agg')
 import matplotlib.pyplot as plt
 
-def get_bridges(args, inputs, labels, num_classes, device, other_inputs=None, other_labels=None):
+def get_bridges(args, inputs, labels, num_classes, device, other_inputs=None, other_labels=None, sigma=None):
     '''
     sample brownian bridges for inputs and labels
     '''
@@ -28,6 +28,13 @@ def get_bridges(args, inputs, labels, num_classes, device, other_inputs=None, ot
         inflat_b = inflat_a[in_shuffle]
         labels_oh_a = F.one_hot(labels, num_classes=num_classes)
         labels_oh_b = labels_oh_a[in_shuffle]
+    elif args.euclidean:
+        # Euclidean distance based endpoints
+        inflat_a = inputs.flatten(1)
+        in_shuffle = torch.cdist(inflat_a,inflat_b,1).sort(-1)[1][:,1]
+        inflat_b = inflat_a[in_shuffle]
+        labels_oh_a = F.one_hot(labels, num_classes=num_classes)
+        labels_oh_b = labels_oh_a[in_shuffle]
     else:
         # Predetermined endpoints
         inflat_a = inputs.flatten(1)
@@ -40,16 +47,22 @@ def get_bridges(args, inputs, labels, num_classes, device, other_inputs=None, ot
     labels_oh_a = labels_oh_a.repeat(args.n_b,1)
     labels_oh_b = labels_oh_b.repeat(args.n_b,1)
     
-    
+    sigma_x = None
+    sigma_y = None
+    if args.temper and sigma is not None:
+        #import pdb
+        #pdb.set_trace()
+        sigma_a = sigma.unsqueeze(1).unsqueeze(2)
+        sigma_b = sigma[in_shuffle].unsqueeze(1).unsqueeze(2)
+        ratio = 1 if args.sigma_y == -1 else args.sigma_y/args.sigma_x
+        sigma_x = t * sigma_a + (1-t)*sigma_b
+        sigma_y = (t_label * sigma_a + (1-t_label)*sigma_b)*(ratio)
+        
+        
     mix_input = bbridges(t, inflat_a, inflat_b, 
-                         var=args.sigma_x, simplex=False).reshape(-1, *inputs.shape[1:])
+                         var=sigma_x if args.temper else args.sigma_x, simplex=False).reshape(-1, *inputs.shape[1:])
     mix_label = bbridges(t_label, labels_oh_a, labels_oh_b, 
-                         var=args.sigma_y, simplex=True).reshape(-1, *labels_oh_a.shape[1:])
-    if args.sigma_y == 0:
-        lam = ((args.T - t_label[...,0])/args.T).unsqueeze(2)
-        mix_label = labels_oh_a.unsqueeze(1).repeat(1,args.n_t,1)*lam +\
-            labels_oh_b.unsqueeze(1).repeat(1,args.n_t,1)*(args.T - lam)
-        mix_label = mix_label.reshape(inputs.shape[0]*args.n_t,200)
+                         var=sigma_y if args.temper else args.sigma_y, simplex=True).reshape(-1, *labels_oh_a.shape[1:])
     return mix_input, mix_label
     
 
@@ -67,6 +80,7 @@ def bbridges(t, a, b, var=1, pp=True, simplex=False):
         pp = 1
 
     dW = torch.randn_like(t) * dt.sqrt().unsqueeze(1) * var * pp
+    #import pdb; pdb.set_trace()
     W = dW.cumsum(1)
     W[:,0] = 0
     W = W + a.unsqueeze(1)

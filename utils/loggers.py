@@ -153,17 +153,25 @@ class Logger:
         wrargs['backward_transfer'] = self.bwt
         wrargs['forgetting'] = self.forgetting
 
-        target_folder = base_path() + "results/"
+        base =  base_path()
+        target_folder = base + "results{}{}/".format(("_shuffle" if self.args.label_shuffle else ""),
+                                                     ("_small" if self.args.buffer_size < 200 else ""))
 
         create_if_not_exists(target_folder + self.setting)
         create_if_not_exists(target_folder + self.setting +
                              "/" + self.dataset)
-        create_if_not_exists(target_folder + self.setting +
-                             "/" + self.dataset + "/" + self.model + 
-                             "_{}".format(5))
+        create_if_not_exists(target_folder + self.setting + "/" + self.dataset\
+            + "/" + self.model\
+            + ("_eu={}".format(self.args.euclidean) if self.args.euclidean else "")\
+            + ("_{}".format(self.args.n_b) if self.args.n_b > 1 else "")\
+            + ("_temper={}".format(self.args.temper) if self.args.temper else ""))
 
         path = target_folder + self.setting + "/" + self.dataset\
-            + "/" + self.model + "_{}".format(5) + "/logs.pyd"
+            + "/" + self.model\
+            + ("_eu={}".format(self.args.euclidean) if self.args.euclidean else "")\
+            + ("_{}".format(self.args.n_b) if self.args.n_b > 1 else "")\
+            + ("_temper={}".format(self.args.temper) if self.args.temper else "") + "/logs.pyd"
+
         with open(path, 'a') as f:
             f.write(str(wrargs) + '\n')
 
