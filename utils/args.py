@@ -56,9 +56,9 @@ def add_experiment_args(parser: ArgumentParser) -> None:
                         help='interpolating y on simplex')
     parser.add_argument('--weight', type=float, default=0.0, 
                         help='Weighting the bridge observation or not')
-    parser.add_argument('--label_shuffle', default=1, choices=[0, 1], 
+    parser.add_argument('--label_shuffle', default=0, choices=[0, 1], 
                         type=int, help='Label shuffling experiment control')
-    parser.add_argument('--euclidean', default=1, choices=[0, 1], 
+    parser.add_argument('--euclidean', default=0, choices=[0, 1], 
                         type=int, help='euclidean distance sampling')
     parser.add_argument('--temper', default=0, choices=[0, 1], 
                         type=int, help='sample with loss gradient norm as bridge variance')
@@ -78,6 +78,11 @@ def add_management_args(parser: ArgumentParser) -> None:
 
     parser.add_argument('--validation', default=0, choices=[0, 1], type=int,
                         help='Test on the validation set')
+    parser.add_argument('--imbalance', default=0, choices=[0, 1], type=int,
+                        help='Test on the validation set')
+    parser.add_argument('--order', type=str,choices=["normal", "reverse", "random"],default="normal",
+                        help='Test on the validation set')
+    
     parser.add_argument('--ignore_other_metrics', default=0, choices=[0, 1], type=int,
                         help='disable additional metrics')
     parser.add_argument('--debug_mode', type=int, default=0, help='Run only a few forward steps per epoch')

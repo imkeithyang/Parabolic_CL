@@ -70,11 +70,13 @@ class ErParabolic(ContinualModel):
         else:
             loss = self.loss(outputs, mix_labels)
             
-        loss.backward()
+        loss.mean().backward()
         self.opt.step()
         self.buffer.add_data(examples=not_aug_inputs,
                              labels=labels[:real_batch_size])
-        return loss.item()
+
+        self.opt.zero_grad()
+        return loss.mean().item()
     
     def importance_weights(self, x, sample_grads, n_t, n_b, batch_size):
             """Calcualte importance weight by integrating the sample_grads according to girsanov"""

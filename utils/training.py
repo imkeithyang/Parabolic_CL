@@ -35,7 +35,7 @@ def mask_classes(outputs: torch.Tensor, dataset: ContinualDataset, k: int) -> No
                dataset.N_TASKS * dataset.N_CLASSES_PER_TASK] = -float('inf')
 
 
-def evaluate(model: ContinualModel, dataset: ContinualDataset, last=False) -> Tuple[list, list]:
+def evaluate(model: ContinualModel, dataset: ContinualDataset, last=False, getlast=False) -> Tuple[list, list]:
     """
     Evaluates the accuracy of the model for each past task.
     :param model: the model to be evaluated
@@ -46,10 +46,16 @@ def evaluate(model: ContinualModel, dataset: ContinualDataset, last=False) -> Tu
     status = model.net.training
     model.net.eval()
     accs, accs_mask_classes = [], []
+    total_0 = 0
+    accs_task0 = 0
+    correct_mask_classes_task0 = 0
+    if getlast:
+        for t in range(dataset.N_TASKS):
+            dataset.get_data_loaders()
     for k, test_loader in enumerate(dataset.test_loaders):
         if last and k < len(dataset.test_loaders) - 1:
             continue
-        correct, correct_mask_classes, total = 0.0, 0.0, 0.0
+        correct, correct_mask_classes, total  = 0.0, 0.0, 0.0
         for data in test_loader:
             with torch.no_grad():
                 inputs, labels = data
@@ -67,13 +73,26 @@ def evaluate(model: ContinualModel, dataset: ContinualDataset, last=False) -> Tu
                     mask_classes(outputs, dataset, k)
                     _, pred = torch.max(outputs.data, 1)
                     correct_mask_classes += torch.sum(pred == labels).item()
+                    
+                if k == 4 and last is False and getlast is True:
+                    total_0 += labels.shape[0]
+                    print(labels)
+                    mask_classes(outputs, dataset, 4)
+                    _, pred = torch.max(outputs.data, 1)
+                    correct_mask_classes_task0 += model.loss(outputs, labels).sum()
+        
 
         accs.append(correct / total * 100
                     if 'class-il' in model.COMPATIBILITY else 0)
         accs_mask_classes.append(correct_mask_classes / total * 100)
-
+        if k == 4 and last is False and getlast is True:
+            accs_task0 = (correct_mask_classes_task0 / total_0).item()
+        else:
+            accs_task0 = 0
+            
+    print(accs_task0)
     model.net.train(status)
-    return accs, accs_mask_classes
+    return accs, accs_mask_classes, accs_task0
 
 
 def train(model: ContinualModel, dataset: ContinualDataset,
@@ -104,8 +123,8 @@ def train(model: ContinualModel, dataset: ContinualDataset,
             model.net.train()
             _, _ = dataset_copy.get_data_loaders()
         if model.NAME != 'icarl' and model.NAME != 'pnn':
-            random_results_class, random_results_task = evaluate(model, dataset_copy)
-
+            random_results_class, random_results_task, _ = evaluate(model, dataset_copy)
+    temp = []
     print(file=sys.stderr)
     for t in range(dataset.N_TASKS):
         model.net.train()
@@ -117,12 +136,13 @@ def train(model: ContinualModel, dataset: ContinualDataset,
             results[t-1] = results[t-1] + accs[0]
             if dataset.SETTING == 'class-il':
                 results_mask_classes[t-1] = results_mask_classes[t-1] + accs[1]
-
+        step = 0
         scheduler = dataset.get_scheduler(model, args)
         for epoch in range(model.args.n_epochs):
             if args.model == 'joint':
                 continue
             for i, data in enumerate(train_loader):
+                step += 1
                 if args.debug_mode and i > 3:
                     break
                 if hasattr(dataset.train_loader.dataset, 'logits'):
@@ -156,13 +176,19 @@ def train(model: ContinualModel, dataset: ContinualDataset,
         if hasattr(model, 'end_task'):
             model.end_task(dataset)
 
+        
         accs = evaluate(model, dataset)
+        accs = (accs[0],accs[1])
+        
+        dataset_copy = get_dataset(args)
+        _,_,accs_task0 = evaluate(model, dataset_copy, getlast=True)
         results.append(accs[0])
         results_mask_classes.append(accs[1])
 
         mean_acc = np.mean(accs, axis=1)
         print_mean_accuracy(mean_acc, t + 1, dataset.SETTING)
-
+        print(accs_task0)
+        temp.append(loss/step)
         if not args.disable_log:
             logger.log(mean_acc)
             logger.log_fullacc(accs)
@@ -192,3 +218,5 @@ def train(model: ContinualModel, dataset: ContinualDataset,
 
     if not args.nowand:
         wandb.finish()
+        
+    print(temp)

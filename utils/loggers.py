@@ -155,7 +155,8 @@ class Logger:
 
         base =  base_path()
         target_folder = base + "results{}{}/".format(("_shuffle" if self.args.label_shuffle else ""),
-                                                     ("_small" if self.args.buffer_size < 200 else ""))
+                                                     #("_small" if self.args.buffer_size < 200 else ""),
+                                                     ("_imbalance" if self.args.imbalance else ""))
 
         create_if_not_exists(target_folder + self.setting)
         create_if_not_exists(target_folder + self.setting +
