@@ -1,5 +1,5 @@
 # Parabolic continual learner
-This is the github repository for our paper **Parabolic Continual Learner (AISTATS 2025)**. The parabolic continual learner constrained the loss of a continual learner to a parabolic PDE. We then used the Feynman-Kac theorem and applies Brownian Bridges to develop a scalable optimization.
+This is the github repository for our paper **Parabolic Continual Learner (AISTATS 2025)**. The parabolic continual learner constrained the loss of a continual learner to a parabolic PDE. We then used the Feynman-Kac theorem and applies Brownian Bridges to develop a scalable optimization. State-of-the-art result was achieved with 5-times faster computational speed comparing to meta-learning based algorithms. 
 
 This repo is largely adapted from the [mammoth repository](https://github.com/aimagelab/mammoth/tree/master). Please follow the instruction on the mammoth repository to install necessary requirements. Our implementation of the parabolic continual learner is in ```models/er_parablic.py```. Additionally, the algorithm to sample Brownian Bridges is provided in ```models/utils/brownian_utils.py```.
 
