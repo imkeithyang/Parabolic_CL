@@ -1,7 +1,7 @@
 # Parabolic Continual Learning
 This is the code repository for our paper **Parabolic Continual Learning (AISTATS 2025)**. In this work, we consider a continual learning technique where the evolution of the learner's loss satisfies a parabolic partial differential equation (PDE) over the space of tasks. We enforce this through the stochastic representation of solutions to parabolic PDEs through a sampling technique. This provides a fast and easy-to-implement approach for learning new tasks. We then unify the expected loss with the task memory to qualitatively describe the error for new tasks. Our empirical findings suggest the method performs competitively on a variety of benchmarks. 
 
-![figure](Figure1.pdf)
+![figure](Figure1.jpg)
 
 This repo is largely adapted from the [mammoth repository](https://github.com/aimagelab/mammoth/tree/master). Please follow the instructions on the mammoth repository to install necessary requirements. Our implementation of the parabolic continual learner is in ```models/er_parabolic.py```. Additionally, the algorithm to sample Brownian bridges is available in ```models/utils/brownian_utils.py```.
 
