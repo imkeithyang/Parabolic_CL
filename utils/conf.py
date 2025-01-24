@@ -31,7 +31,7 @@ def base_path_dataset() -> str:
     """
     Returns the base bath where to log accuracies and tensorboard data.
     """
-    return '/hpc/group/tarokhlab/hy190/data/'
+    return './data/'
 
 
 def set_random_seed(seed: int) -> None:
