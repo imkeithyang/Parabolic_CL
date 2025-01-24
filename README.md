@@ -1,4 +1,3 @@
-<<<<<<< HEAD
 # Parabolic continual learner
 This is the github repository for our paper **Parabolic Continual Learner** which is accepted to AISTATS 2025. The parabolic continual learner constrained the loss of a continual learner to a parabolic PDE. We then used the Feynman-Kac theorem and applies Brownian Bridges to develop a scalable optimization.
 
