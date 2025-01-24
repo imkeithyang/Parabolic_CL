@@ -3,7 +3,7 @@ This is the github repository for our paper **Parabolic Continual Learner** whic
 
 This repo is largely adapted from the [mammoth repository](https://github.com/aimagelab/mammoth/tree/master). Please follow the instruction on the mammoth repository to install necessary requirements. Our implementation of the parabolic continual learner is in ```models/er_parablic.py```. Additionally, the algorithm to sample Brownian Bridges is provided in ```models/utils/brownian_utils.py```.
 
-To run experiments use the following command,     
+To run experiments use the following command, with related dataset and seed input.    
 ```
 python ./utils/main.py \
         --model er_parabolic \
